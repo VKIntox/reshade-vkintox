@@ -10,14 +10,19 @@ namespace VKIntox
     // that VKIntox passes to them. Proper configuration is critical for
     // flawless depth-based effect rendering (DOF, SSAO, etc.)
     //
+    // The user's depth transforms (invert/flip/flop) are deliberately NOT part
+    // of these macros. They are applied at runtime by the resolve shader's push
+    // constants, which is the one place every effect's depth image flows
+    // through. Baking them here as well made the two cancel out whenever a
+    // chain reload recompiled the effects: toggling invert flipped the image
+    // once via the resolve, then flipped it back when the new macros landed.
+    //
     // Parameters:
     //   pp            - ReShade preprocessor to add macros to
     //   depthMode     - Current depth source mode (0-6, see below)
-    //   invertDepth   - Whether depth values are inverted
     
     inline void addReshadeDepthMacros(reshadefx::preprocessor& pp, 
-                                       int depthMode = 0, 
-                                       bool invertDepth = false)
+                                       int depthMode = 0)
     {
         // Depth mode meanings:
         // 0 = Luminance/Red (standard Vulkan depth)
@@ -35,8 +40,10 @@ namespace VKIntox
         pp.add_macro_definition("RESHADE_DEPTH_INPUT_IS_UPSIDE_DOWN", "0");
 
         // Is the depth input reversed (larger value = closer)?
-        // Set based on our depth mode and inversion setting
-        const bool isReversed = (depthMode == 6) || invertDepth; // Reversed-Z or manually inverted
+        // Reversed-Z sources stay reversed — the resolve shader leaves them
+        // alone. Every other orientation is dealt with by the resolve
+        // transform, so the macros only describe the static source encoding.
+        const bool isReversed = (depthMode == 6);
         pp.add_macro_definition("RESHADE_DEPTH_INPUT_IS_REVERSED", isReversed ? "1" : "0");
 
         // Is the depth logarithmically encoded?
