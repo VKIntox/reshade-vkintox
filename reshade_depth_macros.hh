@@ -10,12 +10,8 @@ namespace VKIntox
     // that VKIntox passes to them. Proper configuration is critical for
     // flawless depth-based effect rendering (DOF, SSAO, etc.)
     //
-    // The user's depth transforms (invert/flip/flop) are deliberately NOT part
-    // of these macros. They are applied at runtime by the resolve shader's push
-    // constants, which is the one place every effect's depth image flows
-    // through. Baking them here as well made the two cancel out whenever a
-    // chain reload recompiled the effects: toggling invert flipped the image
-    // once via the resolve, then flipped it back when the new macros landed.
+    // invert/flip/flop are runtime resolve state, not macros; encoding them
+    // here too made every chain reload cancel the transform that was applied
     //
     // Parameters:
     //   pp            - ReShade preprocessor to add macros to
